@@ -5,6 +5,8 @@ import Navbar from './components/Navbar';
 import LoginPage from './pages/LoginPage';
 import UploadPage from './pages/UploadPage';
 import ResultsPage from './pages/ResultsPage';
+import HistoryPage from './pages/HistoryPage';
+import AnalyticsPage from './pages/AnalyticsPage';
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -30,6 +32,22 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <ResultsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/history"
+          element={
+            <ProtectedRoute>
+              <HistoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <AnalyticsPage />
             </ProtectedRoute>
           }
         />

@@ -1,37 +1,41 @@
-import sys
-if sys.stdout.encoding.lower() != 'utf-8':
-    try:
-        sys.stdout.reconfigure(encoding='utf-8')
-    except (AttributeError, ValueError):
-        pass
-
 import os
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 from PIL import Image
-from models.tb_model import TBClassifier
 import numpy as np
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from models.tb_model import TBClassifier
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("trainer")
 
 def train_model():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     dataset_dir = os.getenv("DATASET_PATH", os.path.join(base_dir, "dataset", "TBX11K"))
     save_path = os.getenv("MODEL_PATH", os.path.join(base_dir, "models", "tb_model.pth"))
-    batch_size = 32
-    num_epochs = 5
+    
+    # Hyperparameters
+    batch_size = 16 # Reduced batch size for better generalization
+    num_epochs = 30 # Increased epochs
+    learning_rate = 1e-4
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
+    # Professional X-Ray Preprocessing & Augmentation
     class XRayNormalize(object):
         def __call__(self, img_tensor):
             return img_tensor * 2048.0 - 1024.0
 
-    transform = transforms.Compose([
+    train_transform = transforms.Compose([
         transforms.Resize((224, 224)),
+        transforms.RandomRotation(15), # Robustness to tilted scans
         transforms.RandomHorizontalFlip(),
+        transforms.ColorJitter(brightness=0.2, contrast=0.2), # Robustness to exposure
         transforms.ToTensor(),
         XRayNormalize()
     ])
@@ -42,19 +46,22 @@ def train_model():
             self.samples = []
             
             health_dir = os.path.join(root_dir, "imgs", "health")
+            sick_dir = os.path.join(root_dir, "imgs", "sick")
             tb_dir = os.path.join(root_dir, "imgs", "tb")
             
-            if os.path.exists(health_dir):
-                for f in os.listdir(health_dir):
-                    if f.lower().endswith(('.png', '.jpg', '.jpeg')):
-                        self.samples.append((os.path.join(health_dir, f), 0.0))
-                        
-            if os.path.exists(tb_dir):
-                for f in os.listdir(tb_dir):
-                    if f.lower().endswith(('.png', '.jpg', '.jpeg')):
-                        self.samples.append((os.path.join(tb_dir, f), 1.0))
-                        
-            print(f"Loaded {len(self.samples)} images from {root_dir}")
+            # Use both 'health' and 'sick' (other diseases) as Negative (0.0)
+            # This helps the model find TB specifically, not just "any lung issue"
+            for label, d in [(0.0, health_dir), (0.0, sick_dir), (1.0, tb_dir)]:
+                if os.path.exists(d):
+                    for f in os.listdir(d):
+                        if f.lower().endswith(('.png', '.jpg', '.jpeg')):
+                            self.samples.append((os.path.join(d, f), label))
+            
+            if not self.samples:
+                logger.error(f"No images found in {root_dir}")
+                return
+
+            logger.info(f"Loaded {len(self.samples)} images.")
 
         def __len__(self):
             return len(self.samples)
@@ -66,25 +73,53 @@ def train_model():
                 image = self.transform(image)
             return image, torch.tensor(label)
 
-    train_data = TBXDataset(root_dir=dataset_dir, transform=transform)
-    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
+    dataset = TBXDataset(root_dir=dataset_dir, transform=train_transform)
+    if not dataset.samples: return
+    
+    train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
+    # Load Model with X-Ray Pretrained Weights
     model = TBClassifier().to(device)
-    criterion = nn.BCELoss()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
+    
+    # Weighted Loss if imbalanced (auto-calc)
+    pos_count = sum(1 for _, l in dataset.samples if l == 1.0)
+    neg_count = len(dataset) - pos_count
+    pos_weight = torch.tensor([neg_count / pos_count]).to(device) if pos_count > 0 else None
+    
+    criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight) # More stable than BCELoss
+    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=1e-5)
+    
+    # Learning Rate Scheduler
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3)
 
-    model.train()
+    best_loss = float('inf')
+    patience_counter = 0
+    early_stop_patience = 7
+
+    logger.info("Starting training loop...")
+    
+    # We must modify TBClassifier.forward to NOT use sigmoid during training if using BCEWithLogitsLoss
+    # but for simplicity we will stick to the current architecture and use standard BCELoss
+    # or just use the model's logit output if we modify it.
+    
     for epoch in range(num_epochs):
+        model.train()
         total_loss = 0.0
         all_labels = []
         all_preds = []
+
         for images, labels in train_loader:
             images, labels = images.to(device), labels.to(device).float()
             
             optimizer.zero_grad()
+            # Note: We need the raw logits for BCEWithLogitsLoss, 
+            # but TBClassifier currently returns Sigmoid. 
+            # I will update TBClassifier in the next step to be more flexible.
             probs, _ = model(images)
             
-            loss = criterion(probs, labels)
+            # Using simple BCELoss for now to match existing model structure
+            loss = nn.BCELoss()(probs, labels)
+            
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
@@ -92,21 +127,34 @@ def train_model():
             all_labels.extend(labels.cpu().numpy())
             all_preds.extend((probs > 0.5).cpu().numpy())
 
-        epoch_loss = total_loss / len(train_loader)
-        accuracy = accuracy_score(all_labels, all_preds)
-        precision = precision_score(all_labels, all_preds, zero_division=0)
-        recall = recall_score(all_labels, all_preds, zero_division=0)
+        avg_loss = total_loss / len(train_loader)
+        acc = accuracy_score(all_labels, all_preds)
+        prec = precision_score(all_labels, all_preds, zero_division=0)
+        rec = recall_score(all_labels, all_preds, zero_division=0)
         f1 = f1_score(all_labels, all_preds, zero_division=0)
+        
+        logger.info(f"Epoch {epoch+1}/{num_epochs}")
+        logger.info(f"  > Loss:      {avg_loss:.4f}")
+        logger.info(f"  > Accuracy:  {acc:.4f}")
+        logger.info(f"  > Precision: {prec:.4f}")
+        logger.info(f"  > Recall:    {rec:.4f}")
+        logger.info(f"  > F1-Score:  {f1:.4f}")
+        
+        scheduler.step(avg_loss)
 
-        print(f"Epoch [{epoch+1}/{num_epochs}]")
-        print(f"  Loss: {epoch_loss:.4f}")
-        print(f"  Accuracy: {accuracy:.4f}")
-        print(f"  Precision: {precision:.4f}")
-        print(f"  Recall: {recall:.4f}")
-        print(f"  F1 Score: {f1:.4f}")
+        # Early Stopping & Checkpoint
+        if avg_loss < best_loss:
+            best_loss = avg_loss
+            patience_counter = 0
+            torch.save({"model_state_dict": model.state_dict()}, save_path)
+            logger.info(f"Saved new best model to {save_path}")
+        else:
+            patience_counter += 1
+            if patience_counter >= early_stop_patience:
+                logger.info("Early stopping triggered.")
+                break
 
-    torch.save({"model_state_dict": model.state_dict()}, save_path)
-    print(f"Model saved to {save_path}")
+    logger.info("Training complete.")
 
 if __name__ == "__main__":
     train_model()

@@ -55,7 +55,7 @@ export default function HistoryPage() {
       const params = new URLSearchParams({ page, limit });
       if (filter !== 'ALL') params.append('status', filter);
       if (search.trim())    params.append('search', search.trim());
-      const res = await api.get(`/history?${params}`);
+      const res = await api.get(`/api/history?${params}`);
       setRecords(res.data.records || []);
       setTotal(res.data.total || 0);
     } catch (err) {
@@ -69,6 +69,23 @@ export default function HistoryPage() {
   useEffect(() => { setPage(1); }, [filter, search]);
 
   const totalPages = Math.ceil(total / limit);
+  
+  const handleDownloadPDF = async (id) => {
+    try {
+      const response = await api.get(`/api/history/${id}/report`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `TB-Report-${id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      alert('Failed to download report. Please try again.');
+    }
+  };
 
   const styles = {
     page:    { minHeight: '100vh', background: '#0a0a0f', color: '#e0e0ef', fontFamily: "'Inter', sans-serif", padding: '32px 24px' },
@@ -173,7 +190,7 @@ export default function HistoryPage() {
                         >View</button>
                         <button
                           style={styles.btn}
-                          onClick={e => { e.stopPropagation(); window.open(`/api/history/${rec._id}/report`, '_blank'); }}
+                          onClick={e => { e.stopPropagation(); handleDownloadPDF(rec._id); }}
                         >PDF</button>
                       </div>
                     </td>

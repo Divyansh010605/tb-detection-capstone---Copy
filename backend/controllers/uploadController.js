@@ -50,17 +50,19 @@ async function uploadImage(req, res, next) {
     const duration = Date.now() - start;
 
     // ── CHANGE 2: Save the scan to MongoDB ──
-    // Adapted the patch to work with your existing predictTB response variables
-    const confidenceValue = Math.round(Math.max(aiResult.prediction, 1 - aiResult.prediction) * 100);
-    const dbResultLabel = aiResult.prediction > 0.5 ? 'TB_DETECTED' : 'NORMAL';
+    const confidenceScore = Math.max(aiResult.prediction, 1 - aiResult.prediction);
+    const confidencePercent = Math.round(confidenceScore * 100);
+    const dbResultLabel = aiResult.prediction > 0.75 ? 'TB_DETECTED' : 'NORMAL';
 
     await ScanRecord.create({
       userId:        req.user?._id, // Used optional chaining in case user isn't populated
-      patientId:     req.body.patientId || null,
+      patientId:     req.body.patientId || `P-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
       filename:      originalname || 'unknown',
       result:        dbResultLabel,
-      confidence:    confidenceValue,
-      gradcamBase64: aiResult.heatmap || null, // Using heatmap from your existing aiResult
+      confidence:    confidenceScore,
+      originalImageBase64: imageBase64,
+      gradcamBase64: aiResult.heatmap || null,
+      overlayBase64: aiResult.overlay || null,
       modelVersion:  aiResult.model_version || 'ResNet-50 v1',
       processingMs:  duration, // Using the duration you already calculated
       rawResponse:   aiResult,
@@ -86,7 +88,7 @@ async function uploadImage(req, res, next) {
         heatmap: aiResult.heatmap,
         overlay: aiResult.overlay,
         label: aiResult.prediction > 0.5 ? 'TB Positive' : 'TB Negative',
-        confidence: confidenceValue,
+        confidence: confidencePercent,
         processingTimeMs: duration,
       },
     });

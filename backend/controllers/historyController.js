@@ -105,26 +105,56 @@ exports.getReport = async (req, res, next) => {
     ];
 
     rows.forEach(([label, value]) => {
+      const currentY = doc.y;
       doc
         .fontSize(10).font('Helvetica-Bold').fillColor('#6b7280')
-        .text(label, 50, doc.y, { width: 160, continued: true })
+        .text(label, 50, currentY, { width: 150 });
+      
+      doc
         .font('Helvetica').fillColor('#111827')
-        .text(value, { width: 335 })
-        .moveDown(0.4);
+        .text(value, 200, currentY, { width: 345 });
+      
+      doc.moveDown(0.6);
     });
 
-    /* ── Grad-CAM image (if stored as base64) ── */
-    if (record.gradcamBase64) {
-      doc.moveDown(1);
-      doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#e5e7eb').stroke().moveDown(0.8);
-      doc.fontSize(13).font('Helvetica-Bold').fillColor('#111827').text('Grad-CAM Heatmap').moveDown(0.5);
+    /* ── Imaging Results ── */
+    doc.moveDown(1.5);
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#e5e7eb').stroke().moveDown(1);
+    doc.fontSize(14).font('Helvetica-Bold').fillColor('#111827').text('Imaging & AI Analysis').moveDown(1.5);
 
-      const imgBuffer = Buffer.from(record.gradcamBase64, 'base64');
+    const colWidth = 230;
+    const colGap = 25;
+    const imgHeight = 230; 
+
+    const renderGridImg = (label, base64, x, y) => {
+      if (!base64) return;
+      doc.fontSize(10).font('Helvetica-Bold').fillColor('#374151').text(label, x, y);
       try {
-        doc.image(imgBuffer, { fit: [400, 300], align: 'center' });
-      } catch (_) {
-        doc.fontSize(10).fillColor('#6b7280').text('(Heatmap could not be rendered)');
-      }
+        const buffer = Buffer.from(base64, 'base64');
+        doc.image(buffer, x, y + 15, { width: colWidth, height: imgHeight });
+        
+        doc.save();
+        doc.rect(x, y + 15, colWidth, 14).fill('#000000').opacity(0.4).fill();
+        doc.opacity(1).fontSize(7).fillColor('#ffffff').text(`PATIENT: ${record.patientId}`, x + 5, y + 19, { width: colWidth - 10, align: 'right' });
+        doc.restore();
+      } catch (e) {}
+    };
+
+    if (doc.y > 500) doc.addPage();
+    const row1Y = doc.y;
+    
+    renderGridImg('1. Original X-Ray', record.originalImageBase64, 50, row1Y);
+    renderGridImg('2. AI Heatmap', 50 + colWidth + colGap, row1Y);
+
+    const row2Y = row1Y + imgHeight + 40;
+    
+    if (row2Y > 600) {
+       doc.addPage();
+       renderGridImg('3. AI Overlay', record.overlayBase64, 50, 50);
+       doc.y = 50 + imgHeight + 40;
+    } else {
+       renderGridImg('3. AI Overlay', record.overlayBase64, 50, row2Y);
+       doc.y = row2Y + imgHeight + 40;
     }
 
     /* ── Disclaimer ── */

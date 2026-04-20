@@ -20,7 +20,9 @@ const scanRecordSchema = new mongoose.Schema(
       required: true,
     },
     confidence:    { type: Number, min: 0, max: 1, required: true },
-    gradcamBase64: { type: String, default: null },    // base64 PNG from ai-service
+    originalImageBase64: { type: String, default: null },
+    gradcamBase64: { type: String, default: null },    // heatmap
+    overlayBase64: { type: String, default: null },    // overlay
     gradcamUrl:    { type: String, default: null },    // set if you store to disk/S3
     modelVersion:  { type: String, default: 'ResNet-50 v1' },
     processingMs:  { type: Number, default: null },    // inference latency

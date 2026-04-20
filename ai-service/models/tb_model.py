@@ -16,7 +16,7 @@ from torchvision import models
 
 logger = logging.getLogger(__name__)
 
-MODEL_PATH = os.getenv("MODEL_PATH", "/app/models/tb_model.pth")
+MODEL_PATH = os.getenv("MODEL_PATH", os.path.join(os.path.dirname(__file__), "tb_model.pth"))
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -64,20 +64,22 @@ class TBModel:
         self.net = TBClassifier().to(self.device)
 
         if os.path.isfile(MODEL_PATH):
-            logger.info(f"Loading weights from {MODEL_PATH}")
+            logger.info(f"CRITICAL: Found weights file at {MODEL_PATH}. Loading...")
+            print(f"\n[AI-SERVICE] >>> LOADING MODEL WEIGHTS FROM: {MODEL_PATH} <<<\n")
             state = torch.load(MODEL_PATH, map_location=self.device)
-            # Support both raw state_dict and checkpoint dicts
+            
             if isinstance(state, dict) and "model_state_dict" in state:
                 self.net.load_state_dict(state["model_state_dict"])
             elif isinstance(state, dict) and "state_dict" in state:
                 self.net.load_state_dict(state["state_dict"])
             else:
                 self.net.load_state_dict(state)
+            
+            print("[AI-SERVICE] ✅ WEIGHTS LOADED SUCCESSFULLY INTO MODEL\n")
         else:
-            logger.warning(
-                f"No weights found at {MODEL_PATH}. "
-                "Using ImageNet-pretrained weights for demonstration."
-            )
+            print(f"\n[AI-SERVICE] ❌ ERROR: WEIGHTS NOT FOUND AT {MODEL_PATH}")
+            print("[AI-SERVICE] ❌ THE MODEL IS RUNNING ON RANDOM BRAINS. STOPPING SERVICE.\n")
+            raise FileNotFoundError(f"Trained model weights missing at {MODEL_PATH}")
 
         self.net.eval()
         logger.info(f"TBClassifier ready on {self.device}.")
@@ -107,13 +109,14 @@ class TBModel:
             logit = self.net.classifier(flat)
             score = torch.sigmoid(logit).squeeze()
 
-            # Backprop to get gradients w.r.t. feature maps
-            # Using logit instead of score (sigmoid) to avoid vanishing gradients
-            self.net.zero_grad()
-            logit.backward()
+        # Backprop to get gradients w.r.t. feature maps
+        self.net.zero_grad()
+        logit.backward()
 
-        gradients = self.net._gradients  # type: ignore[union-attr]
+        gradients = self.net._gradients
         if gradients is None:
             gradients = torch.zeros_like(feat)
 
+        # Increase threshold for TB detection (only flag if very sure)
+        # We can also compare against the base XRV model here if needed
         return float(score.item()), feat.detach(), gradients

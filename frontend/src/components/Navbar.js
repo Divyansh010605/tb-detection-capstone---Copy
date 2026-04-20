@@ -13,9 +13,9 @@ export default function Navbar() {
 
   return (
     <nav className="navbar" role="navigation" aria-label="Main navigation">
-      <a href="/upload" className="navbar__logo" id="nav-logo">
+      <Link to="/upload" className="navbar__logo" id="nav-logo">
         🫁 <span>TB</span>-Detect
-      </a>
+      </Link>
       <div className="navbar__links">
         {user ? (
           <>
@@ -25,6 +25,20 @@ export default function Navbar() {
               className={({ isActive }) => `btn btn-ghost${isActive ? ' btn-primary' : ''}`}
             >
               Upload
+            </NavLink>
+            <NavLink
+              to="/history"
+              id="nav-history"
+              className={({ isActive }) => `btn btn-ghost${isActive ? ' btn-primary' : ''}`}
+            >
+              History
+            </NavLink>
+            <NavLink
+              to="/analytics"
+              id="nav-analytics"
+              className={({ isActive }) => `btn btn-ghost${isActive ? ' btn-primary' : ''}`}
+            >
+              Analytics
             </NavLink>
             <span className="navbar__user" aria-label="Current user">
               👤 {user.username}

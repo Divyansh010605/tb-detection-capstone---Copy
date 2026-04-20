@@ -21,6 +21,9 @@ from schemas.prediction import PredictionRequest, PredictionResponse
 from utils.image_processor import preprocess_image
 from utils.gradcam import generate_gradcam
 
+# Version: 1.0.1 (Force Reload)
+print("\n--- AI SERVICE BOOTING UP ---")
+
 # ─── Logging ──────────────────────────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,

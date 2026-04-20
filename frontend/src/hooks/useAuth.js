@@ -4,9 +4,10 @@ import { login as apiLogin, signup as apiSignup } from '../services/authService'
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  // Restore from sessionStorage to allow surviving refreshes, but still logout on tab close
   const [user, setUser] = useState(() => {
     try {
-      const saved = localStorage.getItem('tb_user');
+      const saved = sessionStorage.getItem('tb_user');
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
@@ -15,23 +16,23 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (email, password) => {
     const data = await apiLogin(email, password);
-    localStorage.setItem('tb_token', data.token);
-    localStorage.setItem('tb_user', JSON.stringify(data.user));
+    sessionStorage.setItem('tb_token', data.token);
+    sessionStorage.setItem('tb_user', JSON.stringify(data.user));
     setUser(data.user);
     return data;
   }, []);
 
   const signup = useCallback(async (username, email, password) => {
     const data = await apiSignup(username, email, password);
-    localStorage.setItem('tb_token', data.token);
-    localStorage.setItem('tb_user', JSON.stringify(data.user));
+    sessionStorage.setItem('tb_token', data.token);
+    sessionStorage.setItem('tb_user', JSON.stringify(data.user));
     setUser(data.user);
     return data;
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('tb_token');
-    localStorage.removeItem('tb_user');
+    sessionStorage.removeItem('tb_token');
+    sessionStorage.removeItem('tb_user');
     setUser(null);
   }, []);
 
