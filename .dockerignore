@@ -1,0 +1,27 @@
+# Exclude local dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Exclude Git files
+.git/
+.gitignore
+
+# Exclude Docker files
+docker-compose.yml
+.dockerignore
+
+# Exclude local secrets and logs
+.env
+logs/
+*.log
+
+# Exclude large datasets and models
+ai-service/dataset/
+*.pth
+
+# Exclude build outputs
+frontend/build/
+backend/dist/

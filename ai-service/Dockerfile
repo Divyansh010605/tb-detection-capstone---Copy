@@ -21,8 +21,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy application code
 COPY . .
 
-# Create model directory
-RUN mkdir -p /app/model
+# Create models directory
+RUN mkdir -p /app/models
 
 EXPOSE 8000
 
