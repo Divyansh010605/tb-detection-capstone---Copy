@@ -2,71 +2,88 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_COMPOSE = 'docker-compose'
-        NODE_ENV = 'production'
+        // Permanent model storage on Jenkins host — copy tb_model.pth here ONCE manually
+        MODEL_STORE = 'C:\\jenkins-models\\tb_model.pth'
+        MODEL_DEST  = "${WORKSPACE}\\ai-service\\models\\tb_model.pth"
     }
 
     stages {
-        stage('Setup') {
+        stage('Checkout Code') {
             steps {
-                echo 'Installing dependencies across all services...'
-                sh 'cd backend && npm install'
-                sh 'cd frontend && npm install'
-                sh 'cd ai-service && pip install -r requirements.txt'
+                git branch: 'main', url: 'https://github.com/Divyansh010605/tb-detection-capstone---Copy.git'
             }
         }
 
-        stage('Lint & Quality') {
+        stage('Stop Old Containers') {
             steps {
-                echo 'Running code quality checks...'
-                sh 'cd backend && npm run lint || true'
-                sh 'cd ai-service && flake8 . || true'
+                bat 'docker compose -p tb-detection down'
             }
         }
 
-        stage('Unit Testing') {
-            parallel {
-                stage('Backend Tests') {
-                    steps {
-                        sh 'cd backend && npm test'
+        stage('Prepare Model') {
+            steps {
+                script {
+                    bat "if not exist \"%WORKSPACE%\\ai-service\\models\" mkdir \"%WORKSPACE%\\ai-service\\models\""
+
+                    def result = bat(
+                        script: "@if exist \"${env.MODEL_STORE}\" (echo EXISTS) else (echo MISSING)",
+                        returnStdout: true
+                    ).trim()
+
+                    if (result.contains('EXISTS')) {
+                        echo "Model found — copying to workspace..."
+                        bat "copy /Y \"${env.MODEL_STORE}\" \"${env.MODEL_DEST}\""
+                    } else {
+                        error "Model not found at ${env.MODEL_STORE}. Run once as Admin: copy tb_model.pth to C:\\jenkins-models\\"
                     }
                 }
-                stage('AI Service Tests') {
-                    steps {
-                        sh 'cd ai-service && pytest'
-                    }
+            }
+        }
+
+        stage('Start Mongo') {
+            steps {
+                bat 'docker compose -p tb-detection up -d mongo'
+            }
+        }
+
+        stage('Build AI Service') {
+            steps {
+                bat 'docker compose -p tb-detection up -d --build ai-service'
+            }
+        }
+
+        stage('Build Backend') {
+            steps {
+                bat 'docker compose -p tb-detection up -d --build backend'
+            }
+        }
+
+        stage('Build Frontend') {
+            steps {
+                bat 'docker compose -p tb-detection up -d --build frontend'
+            }
+        }
+
+        stage('Clean Up Space') {
+            steps {
+                bat 'docker image prune -f'
+            }
+        }
+
+        stage('Fetch Ngrok URL') {
+            steps {
+                powershell '''
+                $response = Invoke-RestMethod -Uri 'http://127.0.0.1:4040/api/tunnels' -ErrorAction SilentlyContinue
+                if ($response) {
+                    Write-Host "========================================================"
+                    Write-Host "DEPLOYMENT SUCCESSFUL!"
+                    Write-Host "Your app is live at: $($response.tunnels[0].public_url)"
+                    Write-Host "========================================================"
+                } else {
+                    Write-Host "Could not fetch URL. Is Ngrok running on port 3000?"
                 }
+                '''
             }
-        }
-
-        stage('Model Verification') {
-            steps {
-                echo 'Verifying AI Model weights...'
-                sh 'python -c "import torch; torch.load(\'ai-service/models/tb_model.pth\', map_location=\'cpu\')"'
-            }
-        }
-
-        stage('Docker Build') {
-            steps {
-                echo 'Building Docker Images...'
-                sh "${DOCKER_COMPOSE} build"
-            }
-        }
-
-        stage('Deployment') {
-            steps {
-                echo 'Deploying to staging/production...'
-                sh "${DOCKER_COMPOSE} up -d"
-            }
-        }
-    }
-
-    post {
-        success {
-            echo 'Deployment Successful!'
-        }
-        failure {
-            echo 'Pipeline Failed. Checking logs...'
         }
     }
 }
