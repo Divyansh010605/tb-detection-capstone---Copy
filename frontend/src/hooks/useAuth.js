@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { login as apiLogin, signup as apiSignup } from '../services/authService';
 
 const AuthContext = createContext(null);
