@@ -13,12 +13,16 @@ export default function Navbar() {
 
   return (
     <nav className="navbar" role="navigation" aria-label="Main navigation">
-      <Link to="/upload" className="navbar__logo" id="nav-logo">
-        <span>TB</span>-Detect
-      </Link>
-      <span className="navbar__user" aria-label="Current user">
-              User: {user.username}
-      </span>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px' }}>
+        <Link to="/upload" className="navbar__logo" id="nav-logo">
+          <span>TB</span>-Detect
+        </Link>
+        {user && (
+          <span className="navbar__user" aria-label="Current user">
+            User: {user.username}
+          </span>
+        )}
+      </div>
       <div className="navbar__links">
         {user ? (
           <>
@@ -43,9 +47,7 @@ export default function Navbar() {
             >
               Analytics
             </NavLink>
-            <span className="navbar__user" aria-label="Current user">
-              User: {user.username}
-            </span>
+
             <button id="nav-logout" className="btn btn-ghost" onClick={handleLogout}>
               Logout
             </button>
