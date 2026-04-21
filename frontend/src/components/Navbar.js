@@ -16,6 +16,9 @@ export default function Navbar() {
       <Link to="/upload" className="navbar__logo" id="nav-logo">
         <span>TB</span>-Detect
       </Link>
+      <span className="navbar__user" aria-label="Current user">
+              User: {user.username}
+      </span>
       <div className="navbar__links">
         {user ? (
           <>
