@@ -18,9 +18,8 @@ docker-compose.yml
 logs/
 *.log
 
-# Exclude large datasets and models
+# Exclude large datasets only
 ai-service/dataset/
-*.pth
 
 # Exclude build outputs
 frontend/build/
