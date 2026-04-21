@@ -25,7 +25,7 @@ class TBClassifier(nn.Module):
 
     def __init__(self):
         super().__init__()
-        base = xrv.models.DenseNet(weights="densenet121-res224-all")
+        base = xrv.models.DenseNet(weights=None)
 
         self.features = base.features
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
