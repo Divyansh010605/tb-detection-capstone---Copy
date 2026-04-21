@@ -33,6 +33,8 @@ services:
     environment:
       MODEL_PATH: /app/models/tb_model.pth
       LOG_LEVEL: info
+    volumes:
+      - ${MODEL_HOST_PATH:-./ai-service/models}/tb_model.pth:/app/models/tb_model.pth:ro
     networks:
       - tb-net
     healthcheck:
@@ -40,6 +42,7 @@ services:
       interval: 15s
       timeout: 10s
       retries: 5
+      start_period: 40s
     depends_on:
       mongo:
         condition: service_healthy
