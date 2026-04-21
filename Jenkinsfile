@@ -7,7 +7,7 @@ pipeline {
     }
 
     stages {
-        stage('🚀 Setup') {
+        stage('Setup') {
             steps {
                 echo 'Installing dependencies across all services...'
                 sh 'cd backend && npm install'
@@ -16,7 +16,7 @@ pipeline {
             }
         }
 
-        stage('🔍 Lint & Quality') {
+        stage('Lint & Quality') {
             steps {
                 echo 'Running code quality checks...'
                 sh 'cd backend && npm run lint || true'
@@ -24,7 +24,7 @@ pipeline {
             }
         }
 
-        stage('🧪 Unit Testing') {
+        stage('Unit Testing') {
             parallel {
                 stage('Backend Tests') {
                     steps {
@@ -39,21 +39,21 @@ pipeline {
             }
         }
 
-        stage('🧠 Model Verification') {
+        stage('Model Verification') {
             steps {
                 echo 'Verifying AI Model weights...'
                 sh 'python -c "import torch; torch.load(\'ai-service/models/tb_model.pth\', map_location=\'cpu\')"'
             }
         }
 
-        stage('🏗️ Docker Build') {
+        stage('Docker Build') {
             steps {
                 echo 'Building Docker Images...'
                 sh "${DOCKER_COMPOSE} build"
             }
         }
 
-        stage('🚢 Deployment') {
+        stage('Deployment') {
             steps {
                 echo 'Deploying to staging/production...'
                 sh "${DOCKER_COMPOSE} up -d"
@@ -63,10 +63,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ Deployment Successful!'
+            echo 'Deployment Successful!'
         }
         failure {
-            echo '❌ Pipeline Failed. Checking logs...'
+            echo 'Pipeline Failed. Checking logs...'
         }
     }
 }

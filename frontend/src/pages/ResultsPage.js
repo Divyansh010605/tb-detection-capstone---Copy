@@ -24,7 +24,7 @@ export default function ResultsPage() {
   return (
     <main className="results-page container" role="main">
       <header className="page-header">
-        <h1>🔬 Analysis Results</h1>
+        <h1>Analysis Results</h1>
         <p className="text-muted">AI-powered TB screening with Grad-CAM explainability</p>
       </header>
 
@@ -36,7 +36,7 @@ export default function ResultsPage() {
           role="status"
           aria-live="polite"
         >
-          {isPositive ? '🔴 TB Positive' : '🟢 TB Negative'}
+          {isPositive ? 'TB Positive' : 'TB Negative'}
         </div>
 
         <p className="text-muted text-sm mb-4">
@@ -64,7 +64,7 @@ export default function ResultsPage() {
 
         {isPositive && (
           <div className="alert alert-error text-sm mt-4" role="alert">
-            ⚠️ High probability of Tuberculosis detected. Please consult a qualified radiologist or physician for clinical confirmation.
+            High probability of Tuberculosis detected. Please consult a qualified radiologist or physician for clinical confirmation.
           </div>
         )}
       </div>
@@ -93,7 +93,7 @@ export default function ResultsPage() {
               alt="Grad-CAM heatmap showing regions influencing the prediction"
             />
             <p className="text-muted text-sm mt-4">
-              🔴 Red areas indicate regions most influential in the prediction.
+              Red areas indicate regions most influential in the prediction.
             </p>
           </div>
         )}
@@ -117,7 +117,7 @@ export default function ResultsPage() {
       {/* Actions */}
       <div style={{ display: 'flex', gap: 12, marginTop: 32, flexWrap: 'wrap' }}>
         <button id="analyze-new-btn" className="btn btn-primary btn-lg" onClick={() => navigate('/upload')}>
-          ← Analyze New Image
+          Analyze New Image
         </button>
         <button
           id="download-report-btn"
@@ -138,13 +138,13 @@ export default function ResultsPage() {
             a.click();
           }}
         >
-          📥 Download Report
+          Download Report
         </button>
       </div>
 
       <div className="divider" />
       <p className="text-sm text-muted text-center">
-        ⚠️ This AI system is for research and educational purposes only. Results must be interpreted by a qualified medical professional.
+        This AI system is for research and educational purposes only. Results must be interpreted by a qualified medical professional.
       </p>
     </main>
   );

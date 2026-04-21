@@ -9,7 +9,6 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from models.tb_model import TBClassifier
 import logging
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("trainer")
 
@@ -18,24 +17,22 @@ def train_model():
     dataset_dir = os.getenv("DATASET_PATH", os.path.join(base_dir, "dataset", "TBX11K"))
     save_path = os.getenv("MODEL_PATH", os.path.join(base_dir, "models", "tb_model.pth"))
     
-    # Hyperparameters
-    batch_size = 16 # Reduced batch size for better generalization
-    num_epochs = 30 # Increased epochs
+    batch_size = 16
+    num_epochs = 30
     learning_rate = 1e-4
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
-    # Professional X-Ray Preprocessing & Augmentation
     class XRayNormalize(object):
         def __call__(self, img_tensor):
             return img_tensor * 2048.0 - 1024.0
 
     train_transform = transforms.Compose([
         transforms.Resize((224, 224)),
-        transforms.RandomRotation(15), # Robustness to tilted scans
+        transforms.RandomRotation(15),
         transforms.RandomHorizontalFlip(),
-        transforms.ColorJitter(brightness=0.2, contrast=0.2), # Robustness to exposure
+        transforms.ColorJitter(brightness=0.2, contrast=0.2),
         transforms.ToTensor(),
         XRayNormalize()
     ])
@@ -49,8 +46,6 @@ def train_model():
             sick_dir = os.path.join(root_dir, "imgs", "sick")
             tb_dir = os.path.join(root_dir, "imgs", "tb")
             
-            # Use both 'health' and 'sick' (other diseases) as Negative (0.0)
-            # This helps the model find TB specifically, not just "any lung issue"
             for label, d in [(0.0, health_dir), (0.0, sick_dir), (1.0, tb_dir)]:
                 if os.path.exists(d):
                     for f in os.listdir(d):
@@ -78,18 +73,13 @@ def train_model():
     
     train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-    # Load Model with X-Ray Pretrained Weights
     model = TBClassifier().to(device)
     
-    # Weighted Loss if imbalanced (auto-calc)
     pos_count = sum(1 for _, l in dataset.samples if l == 1.0)
     neg_count = len(dataset) - pos_count
     pos_weight = torch.tensor([neg_count / pos_count]).to(device) if pos_count > 0 else None
     
-    criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight) # More stable than BCELoss
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=1e-5)
-    
-    # Learning Rate Scheduler
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3)
 
     best_loss = float('inf')
@@ -97,10 +87,6 @@ def train_model():
     early_stop_patience = 7
 
     logger.info("Starting training loop...")
-    
-    # We must modify TBClassifier.forward to NOT use sigmoid during training if using BCEWithLogitsLoss
-    # but for simplicity we will stick to the current architecture and use standard BCELoss
-    # or just use the model's logit output if we modify it.
     
     for epoch in range(num_epochs):
         model.train()
@@ -112,14 +98,8 @@ def train_model():
             images, labels = images.to(device), labels.to(device).float()
             
             optimizer.zero_grad()
-            # Note: We need the raw logits for BCEWithLogitsLoss, 
-            # but TBClassifier currently returns Sigmoid. 
-            # I will update TBClassifier in the next step to be more flexible.
             probs, _ = model(images)
-            
-            # Using simple BCELoss for now to match existing model structure
             loss = nn.BCELoss()(probs, labels)
-            
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
@@ -142,7 +122,6 @@ def train_model():
         
         scheduler.step(avg_loss)
 
-        # Early Stopping & Checkpoint
         if avg_loss < best_loss:
             best_loss = avg_loss
             patience_counter = 0

@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Navbar() {
@@ -14,7 +14,7 @@ export default function Navbar() {
   return (
     <nav className="navbar" role="navigation" aria-label="Main navigation">
       <Link to="/upload" className="navbar__logo" id="nav-logo">
-        🫁 <span>TB</span>-Detect
+        <span>TB</span>-Detect
       </Link>
       <div className="navbar__links">
         {user ? (
@@ -41,7 +41,7 @@ export default function Navbar() {
               Analytics
             </NavLink>
             <span className="navbar__user" aria-label="Current user">
-              👤 {user.username}
+              User: {user.username}
             </span>
             <button id="nav-logout" className="btn btn-ghost" onClick={handleLogout}>
               Logout

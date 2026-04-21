@@ -1,9 +1,9 @@
-# 🫁 TB-Detect: AI-Powered Tuberculosis Screening
+# TB-Detect: AI-Powered Tuberculosis Screening
 ### Advanced Chest X-Ray Diagnostics with Explainable AI (Grad-CAM) & Dynamic Reporting
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 TB-Detect is built as a robust microservices-based system, containerized for scale and consistency.
 
 ```
@@ -25,7 +25,7 @@ TB-Detect is built as a robust microservices-based system, containerized for sca
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## 🌟 Key Features
+## Key Features
 - **AI Diagnostics**: High-accuracy TB detection using DenseNet-121 (Pre-trained on X-rays via TorchXRayVision).
 - **Explainable AI (XAI)**: Integrated **Grad-CAM** visualizes specifically where the AI sees indicators of TB.
 - **Auto-Patient ID**: Dynamic generation of unique Patient IDs (`P-XXXXXX`) for every diagnostic session.
@@ -33,7 +33,7 @@ TB-Detect is built as a robust microservices-based system, containerized for sca
 - **History & Analytics**: Complete record-keeping and an interactive dashboard for trend analysis.
 - **Data Privacy**: Automatic stripping of EXIF metadata and secure JWT-based authentication.
 
-## 🚀 Quick Start (Local Development)
+## Quick Start (Local Development)
 
 ### 1. Prerequisites
 - Node.js (v18+)
@@ -65,7 +65,7 @@ npm install
 npm start
 ```
 
-## 🧠 AI Training Pipeline
+## AI Training Pipeline
 To retrain the model on your own dataset (e.g., TBX11K):
 1.  Organize images into `ai-service/dataset/TBX11K/imgs/` under `health/`, `sick/`, and `tb/` folders.
 2.  Run the training script:
@@ -75,7 +75,7 @@ To retrain the model on your own dataset (e.g., TBX11K):
     ```
     *The script includes Early Stopping, Learning Rate Scheduling, and F1-Score evaluation.*
 
-## 🔄 CI/CD with Jenkins
+## CI/CD with Jenkins
 The included `Jenkinsfile` automates the entire pipeline:
 1.  **Code Quality**: Lints and checks for both JS and Python.
 2.  **Unit Tests**: Runs Jest (Backend) and Pytest (AI Service).
@@ -83,16 +83,16 @@ The included `Jenkinsfile` automates the entire pipeline:
 4.  **Containerization**: Builds Docker images for all services.
 5.  **Deployment**: Automated rollout via Docker Compose.
 
-## 🐳 Docker Deployment
+## Docker Deployment
 ```bash
 docker-compose up --build -d
 ```
 
-## 📊 API Reference
+## API Reference
 - **Auth**: `POST /api/auth/login`, `POST /api/auth/signup`
 - **Diagnostics**: `POST /api/upload` (Analyze X-ray)
 - **History**: `GET /api/history` (List records), `GET /api/history/report/:id` (Download PDF)
 - **Analytics**: `GET /api/analytics/stats`
 
 ---
-⚠️ **Disclaimer**: This system is for **research and educational purposes only**. It is not a certified medical diagnostic tool.
+**Disclaimer**: This system is for **research and educational purposes only**. It is not a certified medical diagnostic tool.

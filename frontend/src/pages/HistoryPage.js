@@ -132,20 +132,20 @@ export default function HistoryPage() {
               {f === 'ALL' ? 'All' : f.replace('_', ' ')}
             </button>
           ))}
-          <button style={styles.btn} onClick={fetchHistory} title="Refresh">↻</button>
+          <button style={styles.btn} onClick={fetchHistory} title="Refresh">Refresh</button>
         </div>
 
         {/* Table */}
         {loading ? (
           <div style={styles.empty}>
-            <div style={{ fontSize: 28, marginBottom: 12, opacity: 0.4 }}>⏳</div>
+            <div style={{ fontSize: 14, marginBottom: 12, opacity: 0.4 }}>...</div>
             Loading scans…
           </div>
         ) : error ? (
           <div style={{ ...styles.empty, color: '#f87171' }}>{error}</div>
         ) : records.length === 0 ? (
           <div style={styles.empty}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>🫁</div>
+            <div style={{ fontSize: 14, marginBottom: 12 }}>No Data</div>
             No scans found
             <div style={{ marginTop: 16 }}>
               <button style={styles.btnPri} onClick={() => navigate('/upload')}>Upload first X-Ray</button>
@@ -234,14 +234,14 @@ export default function HistoryPage() {
               Page {page} of {totalPages} · {total} total
             </span>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button style={styles.btn} disabled={page === 1} onClick={() => setPage(p => p - 1)}>← Prev</button>
+              <button style={styles.btn} disabled={page === 1} onClick={() => setPage(p => p - 1)}>Prev</button>
               {Array.from({ length: Math.min(5, totalPages) }, (_, k) => {
                 const p = Math.max(1, Math.min(page - 2, totalPages - 4)) + k;
                 return (
                   <button key={p} style={{ ...styles.btn, background: p === page ? '#6366f1' : '#1a1a2e', color: p === page ? '#fff' : '#8080a0', border: 'none' }} onClick={() => setPage(p)}>{p}</button>
                 );
               })}
-              <button style={styles.btn} disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>Next →</button>
+              <button style={styles.btn} disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>Next</button>
             </div>
           </div>
         )}

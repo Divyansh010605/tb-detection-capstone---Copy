@@ -56,7 +56,7 @@ export default function UploadPage() {
 
       {error && (
         <div className="alert alert-error mb-4" role="alert" id="upload-error">
-          ⚠️ {error}
+          Error: {error}
         </div>
       )}
 
@@ -76,7 +76,7 @@ export default function UploadPage() {
               aria-label="Drop zone for chest X-ray image"
               onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
             >
-              <div className="drop-zone__icon">🩻</div>
+              <div className="drop-zone__icon">File</div>
               {file ? (
                 <p className="drop-zone__text">
                   <strong>{file.name}</strong>
@@ -117,14 +117,14 @@ export default function UploadPage() {
               style={{ width: '100%', justifyContent: 'center' }}
               disabled={!file || loading}
             >
-              {loading ? '🧠 Analyzing…' : '🔬 Analyze X-Ray'}
+              {loading ? 'Analyzing…' : 'Analyze X-Ray'}
             </button>
           </form>
         </div>
 
         {/* Instructions */}
         <div className="card card-sm" style={{ alignSelf: 'start' }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16 }}>📋 Instructions</h2>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16 }}>Instructions</h2>
           <ol style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[
               ['1', 'Upload a PA chest X-ray image'],
@@ -143,7 +143,7 @@ export default function UploadPage() {
           <div className="divider" />
 
           <div className="alert alert-warning text-sm" role="note">
-            ⚠️ This tool is for research purposes only and should not replace professional medical diagnosis.
+            Note: This tool is for research purposes only and should not replace professional medical diagnosis.
           </div>
         </div>
       </div>
