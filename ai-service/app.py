@@ -82,10 +82,12 @@ async def global_exception_handler(request: Request, exc: Exception):
 # ─── Health check ─────────────────────────────────────────────────────────────
 @app.get("/health", tags=["monitoring"])
 async def health():
-    return {
-        "status": "healthy" if model is not None else "degraded",
-        "model_loaded": model is not None,
-    }
+    if model is None:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "degraded", "model_loaded": False},
+        )
+    return {"status": "healthy", "model_loaded": True}
 
 
 # ─── Prediction endpoint ───────────────────────────────────────────────────────
