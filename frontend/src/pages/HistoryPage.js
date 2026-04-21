@@ -55,7 +55,7 @@ export default function HistoryPage() {
       const params = new URLSearchParams({ page, limit });
       if (filter !== 'ALL') params.append('status', filter);
       if (search.trim())    params.append('search', search.trim());
-      const res = await api.get(`/api/history?${params}`);
+      const res = await api.get(`/history?${params}`);
       setRecords(res.data.records || []);
       setTotal(res.data.total || 0);
     } catch (err) {
@@ -72,7 +72,7 @@ export default function HistoryPage() {
   
   const handleDownloadPDF = async (id) => {
     try {
-      const response = await api.get(`/api/history/${id}/report`, {
+      const response = await api.get(`/history/${id}/report`, {
         responseType: 'blob',
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));

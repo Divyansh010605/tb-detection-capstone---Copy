@@ -9,7 +9,7 @@ export async function uploadImage(file) {
   const formData = new FormData();
   formData.append('image', file);
 
-  const res = await api.post('/api/upload', formData, {
+  const res = await api.post('/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
     timeout: 120000, // 2 min for large images
   });

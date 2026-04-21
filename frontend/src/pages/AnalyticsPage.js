@@ -93,7 +93,7 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     setLoading(true);
-    api.get(`/api/analytics?range=${range}`)
+    api.get(`/analytics?range=${range}`)
       .then(r => { setStats(r.data); setLoading(false); })
       .catch(e => { setError(e.response?.data?.message || 'Failed to load analytics'); setLoading(false); });
   }, [range]);
